@@ -207,112 +207,114 @@ stopRecording.addEventListener('click', function () {
 
     var ab = false;
     //sendBlob(blob);
-    avs.sendAudio(dataView).then(function (_ref) {
-      var xhr = _ref.xhr;
-      var response = _ref.response;
+    avs.handleAudio(dataView);
+
+    // avs.sendAudio(dataView).then(function (_ref) {
+    //   var xhr = _ref.xhr;
+    //   var response = _ref.response;
 
 
-      var promises = [];
-      var audioMap = {};
-      var directives = null;
+    //   var promises = [];
+    //   var audioMap = {};
+    //   var directives = null;
 
-      if (response.multipart.length) {
-        (function () {
-          var findAudioFromContentId = function findAudioFromContentId(contentId) {
-            contentId = contentId.replace('cid:', '');
-            for (var key in audioMap) {
-              if (key.indexOf(contentId) > -1) {
-                return audioMap[key];
-              }
-            }
-          };
+    //   if (response.multipart.length) {
+    //     (function () {
+    //       var findAudioFromContentId = function findAudioFromContentId(contentId) {
+    //         contentId = contentId.replace('cid:', '');
+    //         for (var key in audioMap) {
+    //           if (key.indexOf(contentId) > -1) {
+    //             return audioMap[key];
+    //           }
+    //         }
+    //       };
 
-          response.multipart.forEach(function (multipart) {
-            var body = multipart.body;
-            if (multipart.headers && multipart.headers['Content-Type'] === 'application/json') {
-              try {
-                body = JSON.parse(body);
-              } catch (error) {
-                console.error(error);
-              }
+    //       response.multipart.forEach(function (multipart) {
+    //         var body = multipart.body;
+    //         if (multipart.headers && multipart.headers['Content-Type'] === 'application/json') {
+    //           try {
+    //             body = JSON.parse(body);
+    //           } catch (error) {
+    //             console.error(error);
+    //           }
 
-              if (body && body.messageBody && body.messageBody.directives) {
-                directives = body.messageBody.directives;
-              }
-            } else if (multipart.headers['Content-Type'] === 'audio/mpeg') {
-              var start = multipart.meta.body.byteOffset.start;
-              var end = multipart.meta.body.byteOffset.end;
+    //           if (body && body.messageBody && body.messageBody.directives) {
+    //             directives = body.messageBody.directives;
+    //           }
+    //         } else if (multipart.headers['Content-Type'] === 'audio/mpeg') {
+    //           var start = multipart.meta.body.byteOffset.start;
+    //           var end = multipart.meta.body.byteOffset.end;
 
-              /**
-               * Not sure if bug in buffer module or in http message parser
-               * because it's joining arraybuffers so I have to this to
-               * seperate them out.
-               */
-              var slicedBody = xhr.response.slice(start, end);
+    //           /**
+    //            * Not sure if bug in buffer module or in http message parser
+    //            * because it's joining arraybuffers so I have to this to
+    //            * seperate them out.
+    //            */
+    //           var slicedBody = xhr.response.slice(start, end);
 
-              //promises.push(avs.player.enqueue(slicedBody));
-              audioMap[multipart.headers['Content-ID']] = slicedBody;
-            }
-          });
+    //           //promises.push(avs.player.enqueue(slicedBody));
+    //           audioMap[multipart.headers['Content-ID']] = slicedBody;
+    //         }
+    //       });
 
-          directives.forEach(function (directive) {
-            if (directive.namespace === 'SpeechSynthesizer') {
-              if (directive.name === 'speak') {
-                var contentId = directive.payload.audioContent;
-                var audio = findAudioFromContentId(contentId);
-                if (audio) {
-                  avs.audioToBlob(audio).then(function (blob) {
-                    return logAudioBlob(blob, 'RESPONSE');
-                  });
-                  promises.push(avs.player.enqueue(audio));
-                }
-              }
-            } else if (directive.namespace === 'AudioPlayer') {
-              if (directive.name === 'play') {
-                var streams = directive.payload.audioItem.streams;
-                streams.forEach(function (stream) {
-                  var streamUrl = stream.streamUrl;
+    //       directives.forEach(function (directive) {
+    //         if (directive.namespace === 'SpeechSynthesizer') {
+    //           if (directive.name === 'speak') {
+    //             var contentId = directive.payload.audioContent;
+    //             var audio = findAudioFromContentId(contentId);
+    //             if (audio) {
+    //               avs.audioToBlob(audio).then(function (blob) {
+    //                 return logAudioBlob(blob, 'RESPONSE');
+    //               });
+    //               promises.push(avs.player.enqueue(audio));
+    //             }
+    //           }
+    //         } else if (directive.namespace === 'AudioPlayer') {
+    //           if (directive.name === 'play') {
+    //             var streams = directive.payload.audioItem.streams;
+    //             streams.forEach(function (stream) {
+    //               var streamUrl = stream.streamUrl;
 
-                  var audio = findAudioFromContentId(streamUrl);
-                  if (audio) {
-                    avs.audioToBlob(audio).then(function (blob) {
-                      return logAudioBlob(blob, 'RESPONSE');
-                    });
-                    promises.push(avs.player.enqueue(audio));
-                  } else if (streamUrl.indexOf('http') > -1) {
-                    var _xhr = new XMLHttpRequest();
-                    var url = '/parse-m3u?url=' + streamUrl.replace(/!.*$/, '');
-                    _xhr.open('GET', url, true);
-                    _xhr.responseType = 'json';
-                    _xhr.onload = function (event) {
-                      var urls = event.currentTarget.response;
+    //               var audio = findAudioFromContentId(streamUrl);
+    //               if (audio) {
+    //                 avs.audioToBlob(audio).then(function (blob) {
+    //                   return logAudioBlob(blob, 'RESPONSE');
+    //                 });
+    //                 promises.push(avs.player.enqueue(audio));
+    //               } else if (streamUrl.indexOf('http') > -1) {
+    //                 var _xhr = new XMLHttpRequest();
+    //                 var url = '/parse-m3u?url=' + streamUrl.replace(/!.*$/, '');
+    //                 _xhr.open('GET', url, true);
+    //                 _xhr.responseType = 'json';
+    //                 _xhr.onload = function (event) {
+    //                   var urls = event.currentTarget.response;
 
-                      urls.forEach(function (url) {
-                        avs.player.enqueue(url);
-                      });
-                    };
-                    _xhr.send();
-                  }
-                });
-              } else if (directive.namespace === 'SpeechRecognizer') {
-                if (directive.name === 'listen') {
-                  var timeout = directive.payload.timeoutIntervalInMillis;
-                  // enable mic
-                }
-              }
-            }
-          });
+    //                   urls.forEach(function (url) {
+    //                     avs.player.enqueue(url);
+    //                   });
+    //                 };
+    //                 _xhr.send();
+    //               }
+    //             });
+    //           } else if (directive.namespace === 'SpeechRecognizer') {
+    //             if (directive.name === 'listen') {
+    //               var timeout = directive.payload.timeoutIntervalInMillis;
+    //               // enable mic
+    //             }
+    //           }
+    //         }
+    //       });
 
-          if (promises.length) {
-            Promise.all(promises).then(function () {
-              avs.player.playQueue();
-            });
-          }
-        })();
-      }
-    }).catch(function (error) {
-      console.error(error);
-    });
+    //       if (promises.length) {
+    //         Promise.all(promises).then(function () {
+    //           avs.player.playQueue();
+    //         });
+    //       }
+    //     })();
+    //   }
+    // }).catch(function (error) {
+    //   console.error(error);
+    // });
   });
 });
 
@@ -2694,11 +2696,126 @@ var AVS = function () {
         }
 
         _this21._log('Recording stopped.');
-        _this21.emit(AVS.EventTypes.RECORD_STOP);
+        _this21.emit(AVS.EventTypes.RECORD_STOP);        
         return resolve(view);
       });
     }
-  }, {
+  },  {
+    key: 'handleAudio',
+    value: function handleAudio(dataView) {
+
+        console.log(dataView.byteLength);
+
+        avs.sendAudio(dataView).then(function (_ref) {
+        var xhr = _ref.xhr;
+        var response = _ref.response;
+
+
+        var promises = [];
+        var audioMap = {};
+        var directives = null;
+
+        if (response.multipart.length) {
+          (function () {
+            var findAudioFromContentId = function findAudioFromContentId(contentId) {
+              contentId = contentId.replace('cid:', '');
+              for (var key in audioMap) {
+                if (key.indexOf(contentId) > -1) {
+                  return audioMap[key];
+                }
+              }
+            };
+
+            response.multipart.forEach(function (multipart) {
+              var body = multipart.body;
+              if (multipart.headers && multipart.headers['Content-Type'] === 'application/json') {
+                try {
+                  body = JSON.parse(body);
+                } catch (error) {
+                  console.error(error);
+                }
+
+                if (body && body.messageBody && body.messageBody.directives) {
+                  directives = body.messageBody.directives;
+                }
+              } else if (multipart.headers['Content-Type'] === 'audio/mpeg') {
+                var start = multipart.meta.body.byteOffset.start;
+                var end = multipart.meta.body.byteOffset.end;
+
+                /**
+                 * Not sure if bug in buffer module or in http message parser
+                 * because it's joining arraybuffers so I have to this to
+                 * seperate them out.
+                 */
+                var slicedBody = xhr.response.slice(start, end);
+
+                //promises.push(avs.player.enqueue(slicedBody));
+                audioMap[multipart.headers['Content-ID']] = slicedBody;
+              }
+            });
+
+            directives.forEach(function (directive) {
+              if (directive.namespace === 'SpeechSynthesizer') {
+                if (directive.name === 'speak') {
+                  var contentId = directive.payload.audioContent;
+                  var audio = findAudioFromContentId(contentId);
+                  if (audio) {
+                    avs.audioToBlob(audio).then(function (blob) {
+                      return logAudioBlob(blob, 'RESPONSE');
+                    });
+                    promises.push(avs.player.enqueue(audio));
+                  }
+                }
+              } else if (directive.namespace === 'AudioPlayer') {
+                if (directive.name === 'play') {
+                  var streams = directive.payload.audioItem.streams;
+                  streams.forEach(function (stream) {
+                    var streamUrl = stream.streamUrl;
+
+                    var audio = findAudioFromContentId(streamUrl);
+                    if (audio) {
+                      avs.audioToBlob(audio).then(function (blob) {
+                        return logAudioBlob(blob, 'RESPONSE');
+                      });
+                      promises.push(avs.player.enqueue(audio));
+                    } else if (streamUrl.indexOf('http') > -1) {
+                      var _xhr = new XMLHttpRequest();
+                      var url = '/parse-m3u?url=' + streamUrl.replace(/!.*$/, '');
+                      _xhr.open('GET', url, true);
+                      _xhr.responseType = 'json';
+                      _xhr.onload = function (event) {
+                        var urls = event.currentTarget.response;
+
+                        urls.forEach(function (url) {
+                          avs.player.enqueue(url);
+                        });
+                      };
+                      _xhr.send();
+                    }
+                  });
+                } else if (directive.namespace === 'SpeechRecognizer') {
+                  if (directive.name === 'listen') {
+                    var timeout = directive.payload.timeoutIntervalInMillis;
+                    // enable mic
+                  }
+                }
+              }
+            });
+
+            if (promises.length) {
+              Promise.all(promises).then(function () {
+                avs.player.playQueue();
+              });
+            }
+          })();
+        }
+      }).catch(function (error) {
+        console.error(error);
+      });
+
+    }
+  },
+  {
     key: 'sendAudio',
     value: function sendAudio(dataView) {
       var _this22 = this;
@@ -2810,16 +2927,57 @@ var AVS = function () {
         var xhr = new XMLHttpRequest();
 
         xhr.open('GET', 'https://localhost:9745/text2audio?say=' + text, true);
-        xhr.responseType = 'json';
+        xhr.responseType = 'arraybuffer';
 
         xhr.onload = function (event) {
           if (xhr.status == 200) {
-            console.log(xhr.response);
-            //const responseBlob = new Blob([xhr.response], {type: 'audio/mp3'});
+            console.log("returned arraybuffer");
+            //console.log(xhr.response);
+
+            var arrayBuffer = xhr.response;
+
+            console.log("arrayBuffer byteLength: " + arrayBuffer.byteLength);
+
+            //var responseBlob = new Blob([xhr.response], {type: 'audio/mmpeg'});
+            //console.log(responseBlob);
+
+            var interleaved = arrayBuffer;//downsampleBuffer(arrayBuffer, _this23._sampleRate, _this23._outputSampleRate);
+            console.log("interleaved byteLength: " + interleaved.byteLength);
+
+            //var buffer = new ArrayBuffer(44 + interleaved.length * 2);            
+            var view = new DataView(arrayBuffer);
+
+            /**
+             * @credit https://github.com/mattdiamond/Recorderjs
+             */
+            writeUTFBytes(view, 0, 'RIFF');
+            view.setUint32(4, 44 + interleaved.length * 2, true);
+            writeUTFBytes(view, 8, 'WAVE');
+            writeUTFBytes(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, _this23._outputChannels, true);
+            view.setUint32(24, _this23._outputSampleRate, true);
+            view.setUint32(28, _this23._outputSampleRate * 4, true);
+            view.setUint16(32, 4, true);
+            view.setUint16(34, 16, true);
+            writeUTFBytes(view, 36, 'data');
+            view.setUint32(40, interleaved.length * 2, true);
+
+            var length = interleaved.length;
+            var volume = 1;
+            var index = 44;
+
+            for (var i = 0; i < length; i++) {
+              view.setInt16(index, interleaved[i] * (0x7FFF * volume), true);
+              index += 2;
+            }
+
+            avs.handleAudio(view);
           }
         };
 
-        xhr.send();
+        xhr.send();        
 
         return resolve();
       });

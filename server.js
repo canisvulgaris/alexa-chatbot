@@ -23,6 +23,7 @@ const app = express();
 const port = 9745;
 
 const say = require('say');
+const child_process = require('child_process');
 
 const server = https.createServer(options, app).listen(port, () => {
   console.log(`Express server listening on port ${port}`);
@@ -48,10 +49,49 @@ app.get('/text2audio', (req, res) => {
     }
 
     console.log('Text has been saved to audio/' + fileId + '.wav.');
+    
+    child_process.execFile(
+      'ffmpeg',
+      [
+        "-i", "audio/" + fileId + ".wav",
+        "-ar", "16000",
+        "audio/" + fileId + "-16k.wav"
+      ],
+      {
+        cwd: "."
+      },
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log('ffmpegProcess Error: ' + err);
+        }
+        else {
+          console.log('ffmpegProcess Success: ' + stdout);
+          var options = {
+            root: __dirname + '/audio/',
+            dotfiles: 'deny',
+            headers: {
+                'x-timestamp': Date.now(),
+                'x-sent': true,
+                'Content-Type': 'audio/x-wav'
+            }
+          };
+
+          var fileName = fileId + '-16k.wav';
+          res.sendFile(fileName, options, function (err) {
+            if (err) {
+              console.log(err);
+              res.status(err.status).end();
+            }
+            else {
+              console.log('Sent:', fileName);
+            }
+          });
+        }
+        
+      }
+    );
   });
 
-
-  res.json("true");
 });
 
 app.post('/audio', upload.single('data'), (req, res) => {
