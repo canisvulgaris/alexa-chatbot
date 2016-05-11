@@ -16,7 +16,8 @@
     "http-message-parser": "0.0.20",
     "multer": "^1.1.0",
     "request": "^2.72.0",
-    "say": ">=0.9.0"
+    "say": ">=0.9.0",
+    "watson-developer-cloud": ">=1.5.0"
   },
   "devDependencies": {
     "babelify": "^7.2.0",

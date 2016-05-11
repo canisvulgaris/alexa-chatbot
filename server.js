@@ -24,7 +24,15 @@ const port = 9745;
 
 const say = require('say');
 const child_process = require('child_process');
-const google_speech = require('google-speech');
+//const google_speech = require('google-speech');
+
+var watson = require('watson-developer-cloud');
+
+var watson_stt = watson.speech_to_text({
+  username: '9e15e185-b9ef-41b2-9870-e7310d8c2c94',
+  password: 'hj55iZ5gQ3C7',
+  version: 'v1'
+});
 
 const server = https.createServer(options, app).listen(port, () => {
   console.log(`Express server listening on port ${port}`);
@@ -68,6 +76,22 @@ app.get('/text2audio', (req, res) => {
         else {
           console.log('ffmpegProcess Success: ' + stdout);
 
+          var watson_params = {
+            // URL of the resource you wish to access
+            audio: fs.createReadStream('audio/' + fileId + '.wav'),
+            content_type: 'audio/wav; rate=44100'
+          };
+
+          watson_stt.recognize(watson_params, function(err, res) {
+            if (err)
+              console.log(err);
+            else
+              console.log(JSON.stringify(res, null, 2));
+
+
+          });
+
+          //downsample wav file to 16 bit
           var options = {
             root: __dirname + '/audio/',
             dotfiles: 'deny',
