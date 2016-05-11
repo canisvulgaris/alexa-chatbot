@@ -99,24 +99,24 @@ function logError(error) {
   logOutput.innerHTML = '<li>ERROR: ' + error + '</li>' + logOutput.innerHTML;
 }
 
-function logAudioBlob(blob, message) {
-  return new Promise(function (resolve, reject) {
-    var a = document.createElement('a');
-    var aDownload = document.createElement('a');
-    var url = window.URL.createObjectURL(blob);
-    var ext = blob.type.indexOf('mpeg') > -1 ? 'mp3' : 'wav';
-    var filename = Date.now() + '.' + ext;
-    a.href = url;
-    a.target = '_blank';
-    aDownload.href = url;
-    a.textContent = filename;
-    aDownload.download = filename;
-    aDownload.textContent = 'download';
+// function logAudioBlob(blob, message) {
+//   return new Promise(function (resolve, reject) {
+//     var a = document.createElement('a');
+//     var aDownload = document.createElement('a');
+//     var url = window.URL.createObjectURL(blob);
+//     var ext = blob.type.indexOf('mpeg') > -1 ? 'mp3' : 'wav';
+//     var filename = Date.now() + '.' + ext;
+//     a.href = url;
+//     a.target = '_blank';
+//     aDownload.href = url;
+//     a.textContent = filename;
+//     aDownload.download = filename;
+//     aDownload.textContent = 'download';
 
-    audioLogOutput.innerHTML = '<li>' + message + ': ' + a.outerHTML + ' ' + aDownload.outerHTML + '</li>' + audioLogOutput.innerHTML;
-    resolve(blob);
-  });
-}
+//     audioLogOutput.innerHTML = '<li>' + message + ': ' + a.outerHTML + ' ' + aDownload.outerHTML + '</li>' + audioLogOutput.innerHTML;
+//     resolve(blob);
+//   });
+// }
 
 var loginBtn = document.getElementById('login');
 var logoutBtn = document.getElementById('logout');
@@ -196,7 +196,7 @@ stopRecording.addEventListener('click', function () {
     avs.player.emptyQueue().then(function () {
       return avs.audioToBlob(dataView);
     }).then(function (blob) {
-      return logAudioBlob(blob, 'VOICE');
+      return avs.logAudioBlob(blob, 'VOICE');
     }).then(function () {
       return true;// avs.player.enqueue(dataView);
     }).then(function () {
@@ -2701,10 +2701,30 @@ var AVS = function () {
       });
     }
   },  {
+    key: 'logAudioBlob',
+    value: function logAudioBlob(blob, message) {
+      return new Promise(function (resolve, reject) {
+        var a = document.createElement('a');
+        var aDownload = document.createElement('a');
+        var url = window.URL.createObjectURL(blob);
+        var ext = blob.type.indexOf('mpeg') > -1 ? 'mp3' : 'wav';
+        var filename = Date.now() + '.' + ext;
+        a.href = url;
+        a.target = '_blank';
+        aDownload.href = url;
+        a.textContent = filename;
+        aDownload.download = filename;
+        aDownload.textContent = 'download';
+
+        //audioLogOutput.innerHTML = '<li>' + message + ': ' + a.outerHTML + ' ' + aDownload.outerHTML + '</li>' + audioLogOutput.innerHTML;
+        //console.log(message + ': ' + a.outerHTML + ' ' + aDownload.outerHTML);
+        resolve(blob);
+      });
+    }
+  },
+  {
     key: 'handleAudio',
     value: function handleAudio(dataView) {
-
-        console.log(dataView.byteLength);
 
         avs.sendAudio(dataView).then(function (_ref) {
         var xhr = _ref.xhr;
@@ -2761,7 +2781,7 @@ var AVS = function () {
                   var audio = findAudioFromContentId(contentId);
                   if (audio) {
                     avs.audioToBlob(audio).then(function (blob) {
-                      return logAudioBlob(blob, 'RESPONSE');
+                        return avs.logAudioBlob(blob, 'RESPONSE');
                     });
                     promises.push(avs.player.enqueue(audio));
                   }
@@ -2775,7 +2795,8 @@ var AVS = function () {
                     var audio = findAudioFromContentId(streamUrl);
                     if (audio) {
                       avs.audioToBlob(audio).then(function (blob) {
-                        return logAudioBlob(blob, 'RESPONSE');
+                        console.log("line 2779");
+                        return avs.logAudioBlob(blob, 'RESPONSE');
                       });
                       promises.push(avs.player.enqueue(audio));
                     } else if (streamUrl.indexOf('http') > -1) {
@@ -2914,7 +2935,7 @@ var AVS = function () {
       var _this23 = this;
 
       return new Promise(function (resolve, reject) {
-        console.log("sendChatText called with text: " + text);
+        console.log("ASK: " + text);
 
         if (text == "") {
           var error = new Error('No text in chat.');
@@ -2930,22 +2951,10 @@ var AVS = function () {
         xhr.responseType = 'arraybuffer';
 
         xhr.onload = function (event) {
-          if (xhr.status == 200) {
-            console.log("returned arraybuffer");
-            //console.log(xhr.response);
+          if (xhr.status == 200) {          
+            var interleaved = xhr.response;
 
-            var arrayBuffer = xhr.response;
-
-            console.log("arrayBuffer byteLength: " + arrayBuffer.byteLength);
-
-            //var responseBlob = new Blob([xhr.response], {type: 'audio/mmpeg'});
-            //console.log(responseBlob);
-
-            var interleaved = arrayBuffer;//downsampleBuffer(arrayBuffer, _this23._sampleRate, _this23._outputSampleRate);
-            console.log("interleaved byteLength: " + interleaved.byteLength);
-
-            //var buffer = new ArrayBuffer(44 + interleaved.length * 2);            
-            var view = new DataView(arrayBuffer);
+            var view = new DataView(interleaved);
 
             /**
              * @credit https://github.com/mattdiamond/Recorderjs

@@ -24,6 +24,7 @@ const port = 9745;
 
 const say = require('say');
 const child_process = require('child_process');
+const google_speech = require('google-speech');
 
 const server = https.createServer(options, app).listen(port, () => {
   console.log(`Express server listening on port ${port}`);
@@ -66,6 +67,7 @@ app.get('/text2audio', (req, res) => {
         }
         else {
           console.log('ffmpegProcess Success: ' + stdout);
+
           var options = {
             root: __dirname + '/audio/',
             dotfiles: 'deny',
