@@ -1,19 +1,5 @@
-# Example
+# alexa-chatbot
 
-## Development
-
-Watch and build
-
-```bash
-npm run watch
-```
-
-Build
-
-```bash
-npm run build
-```
-
-# License
-
-MIT
+built on top of:
+https://github.com/miguelmota/alexa-voice-service.js
+https://github.com/Marak/say.js
