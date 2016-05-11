@@ -1,6 +1,6 @@
 # alexa-chatbot
 
-## built on top of:
+using:
 
 https://github.com/miguelmota/alexa-voice-service.js
 
