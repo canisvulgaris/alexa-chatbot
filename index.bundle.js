@@ -2810,7 +2810,7 @@ var AVS = function () {
         var xhr = new XMLHttpRequest();
 
         xhr.open('GET', 'https://localhost:9745/text2audio?say=' + text, true);
-        xhr.responseType = 'application/json';
+        xhr.responseType = 'json';
 
         xhr.onload = function (event) {
           if (xhr.status == 200) {

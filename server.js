@@ -42,12 +42,12 @@ app.get('/text2audio', (req, res) => {
 
   var fileId = new Date().valueOf();
 
-  say.export(req.query.say, 'Victoria', 1.0, fileId + '.wav', function(err) {
+  say.export(req.query.say, 'Victoria', 1.0, 'audio/' + fileId + '.wav', function(err) {
     if (err) {
       return console.error(err);
     }
 
-    console.log('Text has been saved to ' + fileId + '.wav.');
+    console.log('Text has been saved to audio/' + fileId + '.wav.');
   });
 
 
