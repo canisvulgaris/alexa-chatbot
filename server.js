@@ -18,7 +18,19 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const qs = require('qs');
 const multer  = require('multer');
-const upload = multer({ dest: 'uploads/' });
+//const upload = multer({ dest: 'uploads/' });
+
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.fieldname + '.wav')
+  }
+})
+
+var upload = multer({ storage: storage })
+
 const app = express();
 const port = 9745;
 
@@ -76,21 +88,6 @@ app.get('/text2audio', (req, res) => {
         else {
           console.log('ffmpegProcess Success: ' + stdout);
 
-          var watson_params = {
-            // URL of the resource you wish to access
-            audio: fs.createReadStream('audio/' + fileId + '.wav'),
-            content_type: 'audio/wav; rate=44100'
-          };
-
-          watson_stt.recognize(watson_params, function(err, res) {
-            if (err)
-              console.log(err);
-            else
-              console.log(JSON.stringify(res, null, 2));
-
-
-          });
-
           //downsample wav file to 16 bit
           var options = {
             root: __dirname + '/audio/',
@@ -109,6 +106,7 @@ app.get('/text2audio', (req, res) => {
               res.status(err.status).end();
             }
             else {
+              res.json();
               console.log('Sent:', fileName);
             }
           });
@@ -120,7 +118,53 @@ app.get('/text2audio', (req, res) => {
 
 });
 
-app.post('/audio', upload.single('data'), (req, res) => {
+app.post('/audio2text', upload.single('file'), (req, res) => {
+
+    console.log("calling audio2text");
+    console.log(req.file);
+    res.json(req.file);
+
+    child_process.execFile(
+      'ffmpeg',
+      [
+        "-i", "uploads/file.wav",
+        "-ar", "16000",
+        "uploads/file-16k.wav"
+      ],
+      {
+        cwd: "."
+      },
+      (err, stdout, stderr) => {
+        if (err) {
+          console.log('ffmpegProcess Error: ' + err);
+        }
+        else {
+          console.log('ffmpegProcess Success: ' + stdout);
+
+          var watson_params = {
+            // URL of the resource you wish to access
+            audio: fs.createReadStream('uploads/file-16k.wav'),
+            content_type: 'audio/wav; rate=16000'
+          };
+
+          watson_stt.recognize(watson_params, function(err, res) {
+            if (err) {
+              console.log(err);
+            }
+            else {
+              var text = res.results[0].alternatives[0].transcript;
+              console.log("transcript: " + text);
+            }
+          });
+
+          
+        }
+        
+      }
+    );
+});
+
+app.post('/audio', upload.single('file'), (req, res) => {
   res.json(req.file);
 });
 

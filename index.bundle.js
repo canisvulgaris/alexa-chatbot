@@ -2726,14 +2726,17 @@ var AVS = function () {
     key: 'handleAudio',
     value: function handleAudio(dataView) {
 
-        avs.sendAudio(dataView).then(function (_ref) {
+        avs.sendAudio(dataView).then(function (_ref) {        
         var xhr = _ref.xhr;
         var response = _ref.response;
-
 
         var promises = [];
         var audioMap = {};
         var directives = null;
+
+
+        var blob = new Blob([xhr.response], { type: 'audio/mpeg' });        
+        avs.sendAudioForTranscription(blob);
 
         if (response.multipart.length) {
           (function () {
@@ -2745,7 +2748,7 @@ var AVS = function () {
                 }
               }
             };
-
+            
             response.multipart.forEach(function (multipart) {
               var body = multipart.body;
               if (multipart.headers && multipart.headers['Content-Type'] === 'application/json') {
@@ -2758,7 +2761,7 @@ var AVS = function () {
                 if (body && body.messageBody && body.messageBody.directives) {
                   directives = body.messageBody.directives;
                 }
-              } else if (multipart.headers['Content-Type'] === 'audio/mpeg') {
+              } else if (multipart.headers['Content-Type'] === 'audio/mpeg') {                
                 var start = multipart.meta.body.byteOffset.start;
                 var end = multipart.meta.body.byteOffset.end;
 
@@ -2767,8 +2770,7 @@ var AVS = function () {
                  * because it's joining arraybuffers so I have to this to
                  * seperate them out.
                  */
-                var slicedBody = xhr.response.slice(start, end);
-
+                var slicedBody = xhr.response.slice(start, end);            
                 //promises.push(avs.player.enqueue(slicedBody));
                 audioMap[multipart.headers['Content-ID']] = slicedBody;
               }
@@ -2783,6 +2785,8 @@ var AVS = function () {
                     avs.audioToBlob(audio).then(function (blob) {
                         return avs.logAudioBlob(blob, 'RESPONSE');
                     });
+
+                    console.log("directive speak");                  
                     promises.push(avs.player.enqueue(audio));
                   }
                 }
@@ -2795,9 +2799,10 @@ var AVS = function () {
                     var audio = findAudioFromContentId(streamUrl);
                     if (audio) {
                       avs.audioToBlob(audio).then(function (blob) {
-                        console.log("line 2779");
                         return avs.logAudioBlob(blob, 'RESPONSE');
                       });
+
+                      console.log("directive play");                                            
                       promises.push(avs.player.enqueue(audio));
                     } else if (streamUrl.indexOf('http') > -1) {
                       var _xhr = new XMLHttpRequest();
@@ -2987,6 +2992,54 @@ var AVS = function () {
         };
 
         xhr.send();        
+
+        return resolve();
+      });
+    }
+  },
+  {
+    key: 'sendAudioForTranscription',
+    value: function sendAudioForTranscription(blob) {
+      console.log("sendAudioForTranscription called..."); 
+      var _this24 = this;
+
+      return new Promise(function (resolve, reject) {
+        if (!blob) {
+          var error = new Error('No audio to send.');
+          _this24._log('error', error);
+          _this24.emit(AVS.EventTypes.ERROR, error);
+          return reject(error);
+        }
+
+        //TODO: call /text2audio service query ?say="text"
+        var xhr = new XMLHttpRequest();
+
+        //var blob = new Blob([arraybuffer], { type: 'audio/mpeg' });
+
+        //console.log(blob);
+
+        //var data = new FormData();
+        //data.append("file", blob);
+        
+        //xhr.setRequestHeader('Content-type', 'multipart/form-data');
+        //xhr.setRequestHeader('Transfer-Encoding', 'chunked');
+        //xhr.responseType = 'json';
+
+        xhr.onload = function (event) {
+          if (xhr.status == 200) {          
+            console.log("OK response: " + xhr.response);
+          }
+          else {
+            console.log("error: " + xhr.response); 
+          }
+        };
+
+        var fd=new FormData();
+        fd.append("name", "filename.wav");
+        fd.append("file", blob);
+        xhr.open('POST', 'https://localhost:9745/audio2text', true);
+
+        xhr.send(fd);
 
         return resolve();
       });

@@ -39,3 +39,4 @@ ssl/server.key
 .DS_Store
 
 audio/*
+uploads/*
