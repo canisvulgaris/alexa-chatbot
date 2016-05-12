@@ -20,12 +20,14 @@ const qs = require('qs');
 const multer  = require('multer');
 //const upload = multer({ dest: 'uploads/' });
 
+var timeStamp = Date.now();
+
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/')
     },
     filename: function (req, file, cb) {
-        cb(null, file.fieldname + '.wav')
+        cb(null, file.fieldname + '-' + timeStamp + '.wav')
   }
 })
 
@@ -63,6 +65,7 @@ app.get('/authresponse', (req, res) => {
 app.get('/text2audio', (req, res) => {
 
   var fileId = new Date().valueOf();
+  timeStamp = Date.now();
 
   say.export(req.query.say, 'Victoria', 1.0, 'audio/' + fileId + '.wav', function(err) {
     if (err) {
@@ -120,16 +123,14 @@ app.get('/text2audio', (req, res) => {
 
 app.post('/audio2text', upload.single('file'), (req, res) => {
 
-    console.log("calling audio2text");
-    console.log(req.file);
-    res.json(req.file);
+    _res = res;
 
     child_process.execFile(
       'ffmpeg',
       [
-        "-i", "uploads/file.wav",
+        "-i", "uploads/file-" + timeStamp + ".wav",
         "-ar", "16000",
-        "uploads/file-16k.wav"
+        "uploads/file-" + timeStamp + "-16k.wav"
       ],
       {
         cwd: "."
@@ -143,8 +144,8 @@ app.post('/audio2text', upload.single('file'), (req, res) => {
 
           var watson_params = {
             // URL of the resource you wish to access
-            audio: fs.createReadStream('uploads/file-16k.wav'),
-            content_type: 'audio/wav; rate=16000'
+            audio: fs.createReadStream("uploads/file-" + timeStamp + "-16k.wav"),
+            content_type: 'audio/wav; rate=44100'
           };
 
           watson_stt.recognize(watson_params, function(err, res) {
@@ -154,6 +155,7 @@ app.post('/audio2text', upload.single('file'), (req, res) => {
             else {
               var text = res.results[0].alternatives[0].transcript;
               console.log("transcript: " + text);
+              _res.json(text);
             }
           });
 
