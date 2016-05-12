@@ -22,6 +22,8 @@ const multer  = require('multer');
 
 var timeStamp = Date.now();
 
+var questionText ="";
+
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/')
@@ -66,6 +68,8 @@ app.get('/text2audio', (req, res) => {
 
   var fileId = new Date().valueOf();
   timeStamp = Date.now();
+
+  questionText = req.query.say;
 
   say.export(req.query.say, 'Victoria', 1.0, 'audio/' + fileId + '.wav', function(err) {
     if (err) {
@@ -155,7 +159,11 @@ app.post('/audio2text', upload.single('file'), (req, res) => {
             else {
               var text = res.results[0].alternatives[0].transcript;
               console.log("transcript: " + text);
-              _res.json(text);
+
+              //build up response
+              //var result = '{ "question": "' + questionText +'", "answer": "' + text + '"}';
+              var result = { "question": questionText, "answer": text };
+              _res.json(result);
             }
           });
 

@@ -5,6 +5,21 @@
   border: 1px solid #F7F7F7;
 }
 
+#responseLog {
+  display: block;
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid #F7F7F7;
+}
+
+#chatInput {
+  display: block;
+  max-height: 300px;
+  width: 500px;
+  overflow: auto;
+  border: 1px solid #F7F7F7;
+}
+
 #audioLog {
   display: block;
   max-height: 300px;

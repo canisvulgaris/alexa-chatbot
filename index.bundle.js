@@ -129,7 +129,7 @@ var pauseAudio = document.getElementById('pauseAudio');
 var playAudio = document.getElementById('playAudio');
 var replayAudio = document.getElementById('replayAudio');
 var chatForm = document.getElementById('chatForm');
-//var chatInput = document.getElementById('chatInput');
+var responseLog = document.getElementById('responseLog');
 
 /*
 // If using client secret
@@ -3028,6 +3028,15 @@ var AVS = function () {
         xhr.onload = function (event) {
           if (xhr.status == 200) {          
             console.log("OK response: " + xhr.response);
+            console.log(xhr.response);
+
+            var results = JSON.parse(xhr.response);
+
+            console.log(results);
+
+            responseLog.innerHTML = '<li><span id="answer" >A: ' + results.answer + '</span></li>' + responseLog.innerHTML;
+            responseLog.innerHTML = '<li><span id="question" >Q: ' + results.question + '</span></li>' + responseLog.innerHTML;
+            responseLog.innerHTML = '<p><span id="line" ></span></p>' + responseLog.innerHTML;
           }
           else {
             console.log("error: " + xhr.response); 
