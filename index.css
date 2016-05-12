@@ -1,3 +1,11 @@
+#question {
+  color: red;
+}
+
+#answer {
+  color: blue;
+}
+
 #log {
   display: block;
   max-height: 300px;
