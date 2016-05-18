@@ -25,11 +25,11 @@ var timeStamp = Date.now();
 var questionText ="";
 
 var storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/')
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + timeStamp + '.wav')
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + '-' + timeStamp + '.wav')
   }
 })
 
@@ -45,8 +45,14 @@ const child_process = require('child_process');
 var watson = require('watson-developer-cloud');
 
 var watson_stt = watson.speech_to_text({
-  username: '9e15e185-b9ef-41b2-9870-e7310d8c2c94',
-  password: 'hj55iZ5gQ3C7',
+  username: '',
+  password: '',
+  version: 'v1'
+});
+
+var watson_tts = watson.text_to_speech({
+  username: '',
+  password: '',
   version: 'v1'
 });
 
@@ -69,21 +75,27 @@ app.get('/text2audio', (req, res) => {
   var fileId = new Date().valueOf();
   timeStamp = Date.now();
 
-  questionText = req.query.say;
+  questionText = req.query.text;
 
-  say.export(req.query.say, 'Victoria', 1.0, 'audio/' + fileId + '.wav', function(err) {
-    if (err) {
-      return console.error(err);
-    }
+  var watson_params = {
+            // URL of the resource you wish to access
+            text: req.query.text,
+            voice: 'en-US_AllisonVoice',
+            accept: 'audio/wav'
+          };
 
+  //var transcript = watson_tts.synthesize(req.query);
+  var transcript = watson_tts.synthesize(watson_params).pipe(fs.createWriteStream('audio/' + fileId + '.wav'));
+
+  transcript.on('finish', function(response) {
     console.log('Text has been saved to audio/' + fileId + '.wav.');
-    
+
     child_process.execFile(
       'ffmpeg',
       [
-        "-i", "audio/" + fileId + ".wav",
-        "-ar", "16000",
-        "audio/" + fileId + "-16k.wav"
+      "-i", "audio/" + fileId + ".wav",
+      "-ar", "16000",
+      "audio/" + fileId + "-16k.wav"
       ],
       {
         cwd: "."
@@ -100,9 +112,9 @@ app.get('/text2audio', (req, res) => {
             root: __dirname + '/audio/',
             dotfiles: 'deny',
             headers: {
-                'x-timestamp': Date.now(),
-                'x-sent': true,
-                'Content-Type': 'audio/x-wav'
+              'x-timestamp': Date.now(),
+              'x-sent': true,
+              'Content-Type': 'audio/x-wav'
             }
           };
 
@@ -119,34 +131,44 @@ app.get('/text2audio', (req, res) => {
           });
         }
         
-      }
-    );
+      });
+    
   });
+  transcript.on('error', function(error) {
+    return console.error(err);
+  });
+
+  // say.export(req.query.say, 'Victoria', 1.0, 'audio/' + fileId + '.wav', function(err) {
+  //   if (err) {
+  //     return console.error(err);
+  //   }
+
+  //   });
 
 });
 
 app.post('/audio2text', upload.single('file'), (req, res) => {
 
-    _res = res;
+  _res = res;
 
-    child_process.execFile(
-      'ffmpeg',
-      [
-        "-i", "uploads/file-" + timeStamp + ".wav",
-        "-ar", "16000",
-        "uploads/file-" + timeStamp + "-16k.wav"
-      ],
-      {
-        cwd: "."
-      },
-      (err, stdout, stderr) => {
-        if (err) {
-          console.log('ffmpegProcess Error: ' + err);
-        }
-        else {
-          console.log('ffmpegProcess Success: ' + stdout);
+  child_process.execFile(
+    'ffmpeg',
+    [
+    "-i", "uploads/file-" + timeStamp + ".wav",
+    "-ar", "16000",
+    "uploads/file-" + timeStamp + "-16k.wav"
+    ],
+    {
+      cwd: "."
+    },
+    (err, stdout, stderr) => {
+      if (err) {
+        console.log('ffmpegProcess Error: ' + err);
+      }
+      else {
+        console.log('ffmpegProcess Success: ' + stdout);
 
-          var watson_params = {
+        var watson_params = {
             // URL of the resource you wish to access
             audio: fs.createReadStream("uploads/file-" + timeStamp + "-16k.wav"),
             content_type: 'audio/wav; rate=44100'
@@ -171,7 +193,7 @@ app.post('/audio2text', upload.single('file'), (req, res) => {
         }
         
       }
-    );
+      );
 });
 
 app.post('/audio', upload.single('file'), (req, res) => {

@@ -2949,10 +2949,9 @@ var AVS = function () {
           return reject(error);
         }
 
-        //TODO: call /text2audio service query ?say="text"
         var xhr = new XMLHttpRequest();
 
-        xhr.open('GET', 'https://localhost:9745/text2audio?say=' + text, true);
+        xhr.open('GET', 'https://localhost:9745/text2audio?text=' + text + '&X-WDC-PL-OPT-OUT=0&download=true', true);
         xhr.responseType = 'arraybuffer';
 
         xhr.onload = function (event) {
@@ -3011,7 +3010,6 @@ var AVS = function () {
           return reject(error);
         }
 
-        //TODO: call /text2audio service query ?say="text"
         var xhr = new XMLHttpRequest();
 
         //var blob = new Blob([arraybuffer], { type: 'audio/mpeg' });
